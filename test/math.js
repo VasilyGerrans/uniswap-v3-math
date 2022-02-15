@@ -20,6 +20,21 @@ function getSwapThresholdPrice(currentSqrtPrice, zeroForOne, slippagePPM) {
     : currentSqrtPrice.mul(denominator.add(slippagePPM)).div(denominator) ;
 }
 
+function getRealPrice(sqrtPrice, decimals0, decimals1, zeroForOne) {
+  sqrtPrice = new BN(sqrtPrice.toString());
+  decimals0 = new BN(decimals0.toString());
+  decimals1 = new BN(decimals1.toString());
+
+  const Q96 = (new BN("2")).pow(new BN("192"));
+  if (zeroForOne) {
+    const scalar = (new BN("10")).pow((new BN(decimals0)).add(new BN("18")).sub(new BN(decimals1)));
+    return sqrtPrice.mul(sqrtPrice).mul(scalar).div(Q96);  
+  } else {
+    const scalar = (new BN("10")).pow((new BN(decimals1)).add(new BN("18")).sub(new BN(decimals0)));
+    return Q96.mul(scalar).div(sqrtPrice).div(sqrtPrice).toString();
+  }
+}
+
 function getOptimalQuantities(x_0, y_0, p_a, P, p_b) {
   x_0 = new BN(x_0.toString());
   y_0 = new BN(y_0.toString());
@@ -59,14 +74,7 @@ function getSwapAmount(x_0, y_0, x, y) {
 }
 
 describe("math", () => {
-  let 
-  deployer, 
-  pool, 
-  dai, 
-  weth, 
-  router,
-  explorer,
-  signers;
+  let deployer, pool, dai, weth, router, explorer, signers;
 
   const dai_pool = "0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8";
   const dai_address = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
@@ -94,7 +102,7 @@ describe("math", () => {
       .deploy(pool_address, token_address, weth_address, SPACING);
     await explorer.deployed();
 
-    for(let i = 0; i < signers.length; i++) {
+    /* for(let i = 0; i < signers.length; i++) {
       const owner = signers[i];
       if (owner != deployer) {
         await owner.sendTransaction({
@@ -102,9 +110,9 @@ describe("math", () => {
           value: ethers.utils.parseEther("1000"),
         });
       } 
-    }
+    } */
 
-    await weth.connect(deployer).deposit({value: ethers.utils.parseEther("20000")});
+    await weth.connect(deployer).deposit({value: ethers.utils.parseEther("10")});
   });
 
   it("deposits", async () => {
@@ -116,25 +124,52 @@ describe("math", () => {
     
     const slot0 = await pool.slot0();
     
+    /**
+     * p(i) = 1.0001^i (Uniswap definition)
+     * So if p(a) * p% = p(b)
+     * then b = a + log(1.0001, p%) (where log(b, a), b - base, a - argument)
+     * So, to get -30% from our tick, we need to subtract log(1.0001, .7)  =~ 3567
+     *     to get +30% from our tick, we need to add      log(1.0001. 1.3) =~ 2624
+     */
+    const thirtyPercentDownTick = Math.round(Math.log(.7) / Math.log(1.0001));
+    const thirtyPercentUpTick =  Math.round(Math.log(1.3) / Math.log(1.0001));
+
+    console.log("The amounts by which we must change the tick:",
+      "\nLower tick:", thirtyPercentDownTick,
+      "\nUpper tick:", thirtyPercentUpTick
+    );
+
     const TICK = (await slot0.tick).toString();
-    const LOWER = getSpacedTick(Number(TICK), SPACING, false);
-    const UPPER = getSpacedTick(Number(TICK), SPACING, true);
+    const LOWER = getSpacedTick(Number(TICK) + thirtyPercentDownTick, SPACING, false);
+    const UPPER = getSpacedTick(Number(TICK) + thirtyPercentUpTick, SPACING, true);
 
     console.log("Ticks:",
       "\n", LOWER.toString(),
       "\n", TICK.toString(),
       "\n", UPPER.toString()
     );
-    
+
+    console.log("Upper and lower sqrt prices without spacing:",
+      "\n", (await explorer.getSqrtRatioAtTick(Number(TICK) + thirtyPercentDownTick)).toString(),
+      "\n", (await explorer.getSqrtRatioAtTick(Number(TICK) + thirtyPercentUpTick)).toString()
+    );
+
     const p_a = await explorer.getSqrtRatioAtTick(LOWER);
     const P = slot0.sqrtPriceX96;
     const p_b = await explorer.getSqrtRatioAtTick(UPPER);
-
-    console.log("Sqrt prices:",
+  
+    console.log("Sqrt prices (with spacing):",
       "\n", p_a.toString(),
       "\n", P.toString(),
       "\n", p_b.toString()
     );
+
+    const realPrice = getRealPrice(P, 18, 18, false);
+    console.log("Scaled real price of token1 in terms of token0:", realPrice.toString());
+
+    const initialValue = (new BN(y_0.toString())).mul(new BN(realPrice.toString()))
+      .div((new BN("10")).pow(new BN("18")))
+      .add(new BN(x_0.toString()));
 
     const { x, y } = getOptimalQuantities(x_0, y_0, p_a, P, p_b);
 
@@ -179,6 +214,14 @@ describe("math", () => {
 
     const liquidity = await explorer.getLiquidity();
     console.log("Liquidity:", liquidity.toString());
+
+    const finalValue = (new BN(y_fin.toString())).mul(new BN(realPrice.toString()))
+      .div((new BN("10")).pow(new BN("18")))
+      .add(new BN(x_fin.toString()));
+    console.log("Value before deposit:", initialValue.toString());
+    console.log("Value after deposit:", finalValue.toString());
+    const precision = "1000000";
+    console.log(`Roughly ${100 * (Number(finalValue.mul(new BN(precision)).div(initialValue).toString()) / Number(precision))}% of initial funds didn't go in`);
   });
 
   it("process swaps", async () => {
@@ -212,27 +255,3 @@ describe("math", () => {
     );
   });
 });
-
-// some scribbles (ignore)...
-
-//  2477.845896265886329462 initial DAI
-//     5.241263843982485614 post-mint DAI (.2% miss, 99.8% deposit)
-
-//  2514.381877892968546120
-//     5.525519804748421516
-// 77524.383076734725834859
-
-//  2614.925271255228771922 DAI
-//     6.529860539382954079 DAI (.2% miss)
-
-//  2603.208804 usdc
-//     3.747030 usdc (.14% miss)
-
-//  2447.061068570808888928
-//     2.470054653392643521 (99.9% hit)
-
-// 0 -> 5,563,140.126688 (USDC) 5,563,140.126688
-// 20000000000000000000000 -> 50 (WETH)
-
-// 20000000000000000000000 -> 0 (WETH) 
-// 0 -> 2,326,295.515209801010683199 (DAI)
