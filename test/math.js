@@ -128,8 +128,8 @@ describe("math", () => {
      * p(i) = 1.0001^i (Uniswap definition)
      * So if p(a) * p% = p(b)
      * then b = a + log(1.0001, p%) (where log(b, a), b - base, a - argument)
-     * So, to get -30% from our tick, we need to subtract log(1.0001, .7)  =~ 3567
-     *     to get +30% from our tick, we need to add      log(1.0001. 1.3) =~ 2624
+     * So, to get -30% from our tick, we need to add log(1.0001, .7)  =~ -3567
+     *     to get +30% from our tick, we need to add log(1.0001. 1.3) =~ 2624
      */
     const thirtyPercentDownTick = Math.round(Math.log(.7) / Math.log(1.0001));
     const thirtyPercentUpTick =  Math.round(Math.log(1.3) / Math.log(1.0001));
