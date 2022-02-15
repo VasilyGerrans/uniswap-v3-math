@@ -1,9 +1,9 @@
 const { ethers } = require("hardhat");
+const BN = require("bn.js");
 const erc20_abi = require("../abi/erc20.json");
 const pool_abi = require("../abi/pool.json");
 const weth_abi = require("../abi/weth.json");
 const router_abi = require("../abi/router.json");
-const BN = require("bn.js");
 
 function getSpacedTick(tick, spacing, roundUp) {
   return roundUp ?
@@ -15,9 +15,9 @@ function getSwapThresholdPrice(currentSqrtPrice, zeroForOne, slippagePPM) {
   currentSqrtPrice = new BN(String(currentSqrtPrice));
   slippagePPM = new BN(String(slippagePPM));
   const denominator = new BN("1000000");
-  return zeroForOne ? 
-    currentSqrtPrice.mul(slippagePPM).div(denominator) : 
-    currentSqrtPrice.mul(denominator.add(slippagePPM)).div(denominator) ;
+  return zeroForOne 
+    ? currentSqrtPrice.mul(slippagePPM).div(denominator) 
+    : currentSqrtPrice.mul(denominator.add(slippagePPM)).div(denominator) ;
 }
 
 function getOptimalQuantities(x_0, y_0, p_a, P, p_b) {
@@ -70,12 +70,10 @@ describe("math", () => {
 
   const dai_pool = "0xC2e9F25Be6257c210d7Adf0D4Cd6E3E881ba25f8";
   const dai_address = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-  const usdc_pool = "0x8ad599c3A0ff1De082011EFDDc58f1908eb6e6D8";
-  const usdc_address = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 
   // Mainnet Addresses
-  const pool_address = usdc_pool;
-  const token_address = usdc_address;
+  const pool_address = dai_pool;
+  const token_address = dai_address;
   const fee = 3000;
   const weth_address = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
   const router_address = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
@@ -235,3 +233,6 @@ describe("math", () => {
 
 // 0 -> 5,563,140.126688 (USDC) 5,563,140.126688
 // 20000000000000000000000 -> 50 (WETH)
+
+// 20000000000000000000000 -> 0 (WETH) 
+// 0 -> 2,326,295.515209801010683199 (DAI)

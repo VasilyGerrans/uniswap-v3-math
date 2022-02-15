@@ -50,4 +50,7 @@ module.exports = {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
   },
+  mocha: {
+    timeout: 0,
+  },
 };
