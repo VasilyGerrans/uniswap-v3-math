@@ -135,11 +135,6 @@ describe("USDC pool", async () => {
       "\n", UPPER.toString()
     );
 
-    console.log("Upper and lower sqrt prices without spacing:",
-      "\n", (await explorer.getSqrtRatioAtTick(Number(TICK) - seventyPercent)).toString(),
-      "\n", (await explorer.getSqrtRatioAtTick(Number(TICK) - hundredThirtyPercent)).toString()
-    );
-
     const p_a = await explorer.getSqrtRatioAtTick(LOWER);
     const P = slot0.sqrtPriceX96;
     const p_b = await explorer.getSqrtRatioAtTick(UPPER);
@@ -153,19 +148,19 @@ describe("USDC pool", async () => {
     const { x, y } = getOptimalQuantities(x_0, y_0, p_a, P, p_b);
 
     console.log("Initial token supplies:",
-      "\nX:", x_0.toString(), 
-      "\nY:", y_0.toString()
+      "\n X:", x_0.toString(), 
+      "\n Y:", y_0.toString()
     );
     console.log("Optimal token supplies:",
-      "\nX:", x.toString(), 
-      "\nY:", y.toString()
+      "\n X:", x.toString(), 
+      "\n Y:", y.toString()
     );
 
     const { zeroForOne, swapAmount } = getSwapAmount(x_0, y_0, x, y);
 
     console.log(
       "swapping X for Y:", zeroForOne, 
-      "\nswapAmount:", swapAmount.toString()
+      "\n swapAmount:", swapAmount.toString()
     );
 
     const realPrice = getRealPrice(P, decimals0, decimals1, zeroForOne);
@@ -203,8 +198,8 @@ describe("USDC pool", async () => {
     const y_fin = new BN((await weth.balanceOf(deployer.address)).toString());
 
     console.log("Final token supplies:",
-      "\nX:", x_fin.toString(), 
-      "\nY:", y_fin.toString()
+      "\n X:", x_fin.toString(), 
+      "\n Y:", y_fin.toString()
     );
 
     const liquidity = await explorer.getLiquidity();
@@ -220,7 +215,6 @@ describe("USDC pool", async () => {
   });
 });
 
-/*
 describe("DAI pool", () => {
   let deployer, pool, dai, weth, router, explorer, signers;
 
@@ -236,6 +230,7 @@ describe("DAI pool", () => {
   const SPACING = 60;
   const decimals0 = 18;
   const decimals1 = 18;
+  const priceZeroForOne = false; // we want margins to be WETH in terms of DAI
 
   before(async () => {
     signers = await ethers.getSigners();
@@ -273,33 +268,24 @@ describe("DAI pool", () => {
     
     const slot0 = await pool.slot0();
     
-    // p(i) = 1.0001^i (Uniswap definition)
-    // So if p(a) * p% = p(b)
-    // then b = a + log(1.0001, p%) (where log(b, a), b - base, a - argument)
-    // So, to get -30% from our tick, we need to add log(1.0001, .7)  =~ -3567
-    // to get +30% from our tick, we need to add log(1.0001. 1.3) =~ 2624
-    
-    const thirtyPercentDownTick = Math.floor(Math.log(.7) / Math.log(1.0001));
-    const thirtyPercentUpTick = Math.floor(Math.log(1.3) / Math.log(1.0001));
-
-    console.log("The amounts by which we must change the tick:",
-      "\nLower tick:", thirtyPercentDownTick,
-      "\nUpper tick:", thirtyPercentUpTick
-    );
+    const seventyPercent = Math.round(Math.log(.7) / Math.log(1.0001));
+    const hundredThirtyPercent =  Math.round(Math.log(1.3) / Math.log(1.0001));
 
     const TICK = (await slot0.tick).toString();
-    const LOWER = getSpacedTick(Number(TICK) + thirtyPercentDownTick, SPACING, true);
-    const UPPER = getSpacedTick(Number(TICK) + thirtyPercentUpTick, SPACING, true);
+    const [ LOWER, UPPER ] = priceZeroForOne 
+      ? [
+          getSpacedTick(Number(TICK) + seventyPercent, SPACING, false),
+          getSpacedTick(Number(TICK) + hundredThirtyPercent, SPACING, true)
+        ]
+      : [
+          getSpacedTick(Number(TICK) - hundredThirtyPercent, SPACING, true),
+          getSpacedTick(Number(TICK) - seventyPercent, SPACING, false)
+        ];
 
     console.log("Ticks:",
       "\n", LOWER.toString(),
       "\n", TICK.toString(),
       "\n", UPPER.toString()
-    );
-
-    console.log("Upper and lower sqrt prices without spacing:",
-      "\n", (await explorer.getSqrtRatioAtTick(Number(TICK) + thirtyPercentDownTick)).toString(),
-      "\n", (await explorer.getSqrtRatioAtTick(Number(TICK) + thirtyPercentUpTick)).toString()
     );
 
     const p_a = await explorer.getSqrtRatioAtTick(LOWER);
@@ -315,26 +301,26 @@ describe("DAI pool", () => {
     const { x, y } = getOptimalQuantities(x_0, y_0, p_a, P, p_b);
 
     console.log("Initial token supplies:",
-      "\nX:", x_0.toString(), 
-      "\nY:", y_0.toString()
+      "\n X:", x_0.toString(), 
+      "\n Y:", y_0.toString()
     );
     console.log("Optimal token supplies:",
-      "\nX:", x.toString(), 
-      "\nY:", y.toString()
+      "\n X:", x.toString(), 
+      "\n Y:", y.toString()
     );
 
     const { zeroForOne, swapAmount } = getSwapAmount(x_0, y_0, x, y);
 
     console.log(
       "swapping X for Y:", zeroForOne, 
-      "\nswapAmount:", swapAmount.toString()
+      "\n swapAmount:", swapAmount.toString()
     );
 
     const realPrice = getRealPrice(P, decimals0, decimals1, zeroForOne);
 
-    const scaledPriceA = getRealPrice(p_a, decimals0, decimals1, true).toString();
-    const scaledPrice = getRealPrice(P, decimals0, decimals1, true).toString();
-    const scaledPriceB = getRealPrice(p_b, decimals0, decimals1, true).toString();
+    const scaledPriceA = getRealPrice(p_a, decimals0, decimals1, zeroForOne).toString();
+    const scaledPrice = getRealPrice(P, decimals0, decimals1, zeroForOne).toString();
+    const scaledPriceB = getRealPrice(p_b, decimals0, decimals1, zeroForOne).toString();
 
     console.log("Scaled prices:",
       "\n Lower:", scaledPriceA, `(~${Math.round(10000 * Number(scaledPriceA)/Number(scaledPrice)) / 100}%)`,
@@ -365,8 +351,8 @@ describe("DAI pool", () => {
     const y_fin = new BN((await weth.balanceOf(deployer.address)).toString());
 
     console.log("Final token supplies:",
-      "\nX:", x_fin.toString(), 
-      "\nY:", y_fin.toString()
+      "\n X:", x_fin.toString(), 
+      "\n Y:", y_fin.toString()
     );
 
     const liquidity = await explorer.getLiquidity();
@@ -412,8 +398,3 @@ describe("DAI pool", () => {
     );
   });
 });
-*/
-
-// 4500.672242694486410553
-// 3148.268069916962115999
-// 2421.186649013743707201
