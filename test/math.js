@@ -167,9 +167,9 @@ describe("USDC pool", async () => {
     const realPrice = getRealPrice(P, decimals0, decimals1, zeroForOne);
 
     console.log("Scaled prices:",
-      "\nLower:", getRealPrice(p_a, decimals0, decimals1, true).toString(),
-      "\nCurrent:", getRealPrice(P, decimals0, decimals1, true).toString(),
-      "\nUpper:", getRealPrice(p_b, decimals0, decimals1, true).toString()
+      "\n Lower:", getRealPrice(p_a, decimals0, decimals1, true).toString(),
+      "\n Current:", getRealPrice(P, decimals0, decimals1, true).toString(),
+      "\n Upper:", getRealPrice(p_b, decimals0, decimals1, true).toString()
     );
 
     const initialValue = (new BN(y_0.toString())).mul(new BN(realPrice.toString()))
@@ -323,9 +323,9 @@ describe("DAI pool", () => {
     const realPrice = getRealPrice(P, 18, 18, zeroForOne);
 
     console.log("Scaled prices:",
-      "\nLower:", getRealPrice(p_a, 18, 18, true).toString(),
-      "\nCurrent:", getRealPrice(P, 18, 18, true).toString(),
-      "\nUpper:", getRealPrice(p_b, 18, 18, true).toString()
+      "\n Lower:", getRealPrice(p_a, 18, 18, true).toString(),
+      "\n Current:", getRealPrice(P, 18, 18, true).toString(),
+      "\n Upper:", getRealPrice(p_b, 18, 18, true).toString()
     );
 
     const initialValue = (new BN(y_0.toString())).mul(new BN(realPrice.toString()))
