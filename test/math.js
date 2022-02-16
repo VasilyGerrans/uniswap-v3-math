@@ -87,6 +87,8 @@ describe("USDC pool", async () => {
   const decimals0 = 6;
   const decimals1 = 18;
 
+  const priceZeroForOne = false; // we want margins to be WETH in terms of DAI
+
   before(async () => {
     signers = await ethers.getSigners();
     deployer = signers[10];
@@ -113,17 +115,24 @@ describe("USDC pool", async () => {
     
     const slot0 = await pool.slot0();
     
-    const thirtyPercentDownTick = Math.round(Math.log(.7) / Math.log(1.0001));
-    const thirtyPercentUpTick =  Math.round(Math.log(1.3) / Math.log(1.0001));
+    const seventyPercent = Math.round(Math.log(.7) / Math.log(1.0001));
+    const hundredThirtyPercent =  Math.round(Math.log(1.3) / Math.log(1.0001));
 
     console.log("The amounts by which we must change the tick:",
-      "\nLower tick:", thirtyPercentDownTick,
-      "\nUpper tick:", thirtyPercentUpTick
+      "\nLower tick:", seventyPercent,
+      "\nUpper tick:", hundredThirtyPercent
     );
 
     const TICK = (await slot0.tick).toString();
-    const LOWER = getSpacedTick(Number(TICK) + thirtyPercentDownTick, SPACING, false);
-    const UPPER = getSpacedTick(Number(TICK) + thirtyPercentUpTick, SPACING, true);
+    const [ LOWER, UPPER ] = priceZeroForOne 
+      ? [
+          getSpacedTick(Number(TICK) + seventyPercent, SPACING, false),
+          getSpacedTick(Number(TICK) + hundredThirtyPercent, SPACING, true)
+        ]
+      : [
+          getSpacedTick(Number(TICK) - hundredThirtyPercent, SPACING, true),
+          getSpacedTick(Number(TICK) - seventyPercent, SPACING, false)
+        ];
 
     console.log("Ticks:",
       "\n", LOWER.toString(),
@@ -132,8 +141,8 @@ describe("USDC pool", async () => {
     );
 
     console.log("Upper and lower sqrt prices without spacing:",
-      "\n", (await explorer.getSqrtRatioAtTick(Number(TICK) + thirtyPercentDownTick)).toString(),
-      "\n", (await explorer.getSqrtRatioAtTick(Number(TICK) + thirtyPercentUpTick)).toString()
+      "\n", (await explorer.getSqrtRatioAtTick(Number(TICK) - seventyPercent)).toString(),
+      "\n", (await explorer.getSqrtRatioAtTick(Number(TICK) - hundredThirtyPercent)).toString()
     );
 
     const p_a = await explorer.getSqrtRatioAtTick(LOWER);
@@ -166,9 +175,9 @@ describe("USDC pool", async () => {
 
     const realPrice = getRealPrice(P, decimals0, decimals1, zeroForOne);
 
-    const scaledPriceA = getRealPrice(p_a, decimals0, decimals1, true).toString();
-    const scaledPrice = getRealPrice(P, decimals0, decimals1, true).toString();
-    const scaledPriceB = getRealPrice(p_b, decimals0, decimals1, true).toString();
+    const scaledPriceA = getRealPrice(p_a, decimals0, decimals1, priceZeroForOne).toString();
+    const scaledPrice = getRealPrice(P, decimals0, decimals1, priceZeroForOne).toString();
+    const scaledPriceB = getRealPrice(p_b, decimals0, decimals1, priceZeroForOne).toString();
 
     console.log("Scaled prices:",
       "\n Lower:", scaledPriceA, `(~${Math.round(10000 * Number(scaledPriceA)/Number(scaledPrice)) / 100}%)`,
@@ -216,6 +225,7 @@ describe("USDC pool", async () => {
   });
 });
 
+/*
 describe("DAI pool", () => {
   let deployer, pool, dai, weth, router, explorer, signers;
 
@@ -407,3 +417,8 @@ describe("DAI pool", () => {
     );
   });
 });
+*/
+
+// 4500.672242694486410553
+// 3148.268069916962115999
+// 2421.186649013743707201
