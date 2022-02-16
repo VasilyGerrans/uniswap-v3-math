@@ -118,11 +118,6 @@ describe("USDC pool", async () => {
     const seventyPercent = Math.round(Math.log(.7) / Math.log(1.0001));
     const hundredThirtyPercent =  Math.round(Math.log(1.3) / Math.log(1.0001));
 
-    console.log("The amounts by which we must change the tick:",
-      "\nLower tick:", seventyPercent,
-      "\nUpper tick:", hundredThirtyPercent
-    );
-
     const TICK = (await slot0.tick).toString();
     const [ LOWER, UPPER ] = priceZeroForOne 
       ? [
