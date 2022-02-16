@@ -166,10 +166,14 @@ describe("USDC pool", async () => {
 
     const realPrice = getRealPrice(P, decimals0, decimals1, zeroForOne);
 
+    const scaledPriceA = getRealPrice(p_a, decimals0, decimals1, true).toString();
+    const scaledPrice = getRealPrice(P, decimals0, decimals1, true).toString();
+    const scaledPriceB = getRealPrice(p_b, decimals0, decimals1, true).toString();
+
     console.log("Scaled prices:",
-      "\n Lower:", getRealPrice(p_a, decimals0, decimals1, true).toString(),
-      "\n Current:", getRealPrice(P, decimals0, decimals1, true).toString(),
-      "\n Upper:", getRealPrice(p_b, decimals0, decimals1, true).toString()
+      "\n Lower:", scaledPriceA, `(~${Math.round(10000 * Number(scaledPriceA)/Number(scaledPrice)) / 100}%)`,
+      "\n Current:", scaledPrice, "(100%)",
+      "\n Upper:", scaledPriceB, `(~${Math.round(10000 * Number(scaledPriceB)/Number(scaledPrice)) / 100}%)`
     );
 
     const initialValue = (new BN(y_0.toString())).mul(new BN(realPrice.toString()))
@@ -224,8 +228,9 @@ describe("DAI pool", () => {
   const fee = 3000;
   const weth_address = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
   const router_address = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
-
   const SPACING = 60;
+  const decimals0 = 18;
+  const decimals1 = 18;
 
   before(async () => {
     signers = await ethers.getSigners();
@@ -320,12 +325,16 @@ describe("DAI pool", () => {
       "\nswapAmount:", swapAmount.toString()
     );
 
-    const realPrice = getRealPrice(P, 18, 18, zeroForOne);
+    const realPrice = getRealPrice(P, decimals0, decimals1, zeroForOne);
+
+    const scaledPriceA = getRealPrice(p_a, decimals0, decimals1, true).toString();
+    const scaledPrice = getRealPrice(P, decimals0, decimals1, true).toString();
+    const scaledPriceB = getRealPrice(p_b, decimals0, decimals1, true).toString();
 
     console.log("Scaled prices:",
-      "\n Lower:", getRealPrice(p_a, 18, 18, true).toString(),
-      "\n Current:", getRealPrice(P, 18, 18, true).toString(),
-      "\n Upper:", getRealPrice(p_b, 18, 18, true).toString()
+      "\n Lower:", scaledPriceA, `(~${Math.round(10000 * Number(scaledPriceA)/Number(scaledPrice)) / 100}%)`,
+      "\n Current:", scaledPrice, "(100%)",
+      "\n Upper:", scaledPriceB, `(~${Math.round(10000 * Number(scaledPriceB)/Number(scaledPrice)) / 100}%)`
     );
 
     const initialValue = (new BN(y_0.toString())).mul(new BN(realPrice.toString()))
