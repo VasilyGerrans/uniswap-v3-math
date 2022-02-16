@@ -165,7 +165,12 @@ describe("USDC pool", async () => {
     );
 
     const realPrice = getRealPrice(P, decimals0, decimals1, zeroForOne);
-    console.log("Scaled real price of token1 in terms of token0:", realPrice.toString());
+
+    console.log("Scaled prices:",
+      "\nLower:", getRealPrice(p_a, decimals0, decimals1, true).toString(),
+      "\nCurrent:", getRealPrice(P, decimals0, decimals1, true).toString(),
+      "\nUpper:", getRealPrice(p_b, decimals0, decimals1, true).toString()
+    );
 
     const initialValue = (new BN(y_0.toString())).mul(new BN(realPrice.toString()))
       .div((new BN("10")).pow(new BN("18")))
@@ -264,8 +269,8 @@ describe("DAI pool", () => {
     // So, to get -30% from our tick, we need to add log(1.0001, .7)  =~ -3567
     // to get +30% from our tick, we need to add log(1.0001. 1.3) =~ 2624
     
-    const thirtyPercentDownTick = Math.round(Math.log(.7) / Math.log(1.0001));
-    const thirtyPercentUpTick =  Math.round(Math.log(1.3) / Math.log(1.0001));
+    const thirtyPercentDownTick = Math.floor(Math.log(.7) / Math.log(1.0001));
+    const thirtyPercentUpTick = Math.floor(Math.log(1.3) / Math.log(1.0001));
 
     console.log("The amounts by which we must change the tick:",
       "\nLower tick:", thirtyPercentDownTick,
@@ -273,7 +278,7 @@ describe("DAI pool", () => {
     );
 
     const TICK = (await slot0.tick).toString();
-    const LOWER = getSpacedTick(Number(TICK) + thirtyPercentDownTick, SPACING, false);
+    const LOWER = getSpacedTick(Number(TICK) + thirtyPercentDownTick, SPACING, true);
     const UPPER = getSpacedTick(Number(TICK) + thirtyPercentUpTick, SPACING, true);
 
     console.log("Ticks:",
@@ -316,7 +321,12 @@ describe("DAI pool", () => {
     );
 
     const realPrice = getRealPrice(P, 18, 18, zeroForOne);
-    console.log("Scaled real price of token1 in terms of token0:", realPrice.toString());
+
+    console.log("Scaled prices:",
+      "\nLower:", getRealPrice(p_a, 18, 18, true).toString(),
+      "\nCurrent:", getRealPrice(P, 18, 18, true).toString(),
+      "\nUpper:", getRealPrice(p_b, 18, 18, true).toString()
+    );
 
     const initialValue = (new BN(y_0.toString())).mul(new BN(realPrice.toString()))
       .div((new BN("10")).pow(new BN("18")))
